@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LF.睡眠计算器 </title>
+    <meta name="theme-color" content="#fce7f3">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        /* 女主题（默认） */
+        :root {
+            --primary: #ff6b9d;
+            --primary-dark: #e84393;
+            --primary-light: #ff9fce;
+            --secondary: #c56cf0;
+            --accent: #ff9ff3;
+            --bg: linear-gradient(135deg, #fce7f3 0%, #f3e5f5 100%);
+            --card-bg: rgba(255, 255, 255, 0.98);
+            --surface: rgba(255, 255, 255, 0.92);
+            --text: #5a3d5c;
+            --text-secondary: #9c89b8;
+            --text-muted: #b39bc8;
+            --success: #58d68d;
+            --warning: #f7dc6f;
+            --error: #f1948a;
+            --shadow: 0 20px 40px rgba(236, 112, 188, 0.15);
+            --shadow-light: 0 10px 20px rgba(236, 112, 188, 0.1);
+            --radius-lg: 28px;
+            --radius-md: 20px;
+            --radius-sm: 14px;
+            --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        /* 男主题 */
+        .theme-male {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #60a5fa;
+            --secondary: #06b6d4;
+            --accent: #22d3ee;
+            --bg: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%);
+            --card-bg: rgba(255, 255, 255, 0.98);
+            --surface: rgba(255, 255, 255, 0.92);
+            --text: #1e3a8a;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+            --shadow-light: 0 10px 20px rgba(59, 130, 246, 0.1);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 16px;
+            line-height: 1.5;
+            overflow-x: hidden;
+            touch-action: pan-y;
+            transition: var(--transition);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            position: relative;
+            width: 100%;
+        }
+        
+        /* 背景装饰元素 */
+        .bg-blur {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            z-index: -1;
+            transition: var(--transition);
+        }
+        
+        .bg-1 {
+            background: var(--primary);
+            top: 10%;
+            left: -100px;
+        }
+        
+        .bg-2 {
+            background: var(--secondary);
+            bottom: 10%;
+            right: -100px;
+        }
+        
+        /* 主题切换按钮 */
+        .theme-toggle-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 100;
+        }
+        
+        .theme-toggle {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--primary);
+            font-size: 28px;
+            transition: var(--transition);
+            box-shadow: var(--shadow-light);
+            position: relative;
+            overflow: hidden;
+            font-weight: bold;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.15) rotate(15deg);
+            box-shadow: 0 15px 30px rgba(var(--primary-rgb), 0.2);
+        }
+        
+        /* 卡片 */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            padding: clamp(20px, 5vw, 32px);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+            width: 100%;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            transition: var(--transition);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: clamp(24px, 6vw, 32px);
+            position: relative;
+            padding-top: 20px;
+        }
+        
+        .header h1 {
+            font-size: clamp(28px, 8vw, 36px);
+            font-weight: 900;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            transition: var(--transition);
+            line-height: 1.2;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: clamp(14px, 4vw, 16px);
+            font-weight: 500;
+            opacity: 0.9;
+            transition: var(--transition);
+            line-height: 1.4;
+        }
+        
+        .header-icon {
+            font-size: clamp(48px, 12vw, 60px);
+            margin-bottom: clamp(16px, 4vw, 20px);
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 5px 15px rgba(var(--primary-rgb), 0.3));
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(5deg); }
+        }
+        
+        /* 模式选择器 */
+        .mode-selector {
+            display: flex;
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: 8px;
+            margin-bottom: clamp(24px, 6vw, 32px);
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: var(--transition);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .mode-selector::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: clamp(14px, 4vw, 18px) 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 800;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: clamp(14px, 4vw, 16px);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            text-align: center;
+        }
+        
+        .mode-btn.active {
+            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.25);
+            transform: translateY(-2px);
+        }
+        
+        .mode-btn:not(.active):hover {
+            background: rgba(255, 255, 255, 0.6);
+            color: var(--text);
+            transform: translateY(-2px);
+        }
+        
+        /* 时间选择器 - 美化版 */
+        .time-selector {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: clamp(20px, 5vw, 28px);
+            margin-bottom: clamp(20px, 5vw, 28px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .time-label {
+            display: block;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 20px;
+            font-size: clamp(16px, 4.5vw, 18px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: var(--transition);
+            line-height: 1.3;
+        }
+        
+        .time-label::before {
+            content: "⏰";
+            font-size: clamp(18px, 5vw, 22px);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* 自定义时间选择器 */
+        .time-picker-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .custom-time-display {
+            width: 100%;
+            padding: clamp(16px, 4vw, 22px);
+            font-size: clamp(28px, 8vw, 36px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: var(--radius-sm);
+            color: var(--primary);
+            outline: none;
+            text-align: center;
+            transition: var(--transition);
+            font-weight: 900;
+            letter-spacing: 2px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            position: relative;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            text-shadow: 0 0 20px rgba(var(--primary-rgb), 0.2);
+            font-feature-settings: "tnum";
+            line-height: 1.2;
+        }
+        
+        .custom-time-display:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .custom-time-display:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.15), 0 15px 30px rgba(0, 0, 0, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .custom-time-display::after {
+            content: "⌚";
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            opacity: 0.6;
+            transition: var(--transition);
+        }
+        
+        .custom-time-display:hover::after {
+            opacity: 1;
+            transform: translateY(-50%) rotate(30deg);
+        }
+        
+        /* 隐藏原生时间输入框 */
+        .native-time-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        /* 时间详情显示 */
+        .time-detail {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            font-size: clamp(14px, 4vw, 16px);
+            color: var(--text-secondary);
+            font-weight: 600;
+            opacity: 0.9;
+            transition: var(--transition);
+        }
+        
+        .time-period {
+            background: rgba(var(--primary-rgb), 0.15);
+            color: var(--primary);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: clamp(14px, 4vw, 16px);
+            transition: var(--transition);
+            line-height: 1.2;
+        }
+        
+        /* 滑块样式 */
+        .slider-container {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: clamp(20px, 5vw, 28px);
+            margin-bottom: clamp(20px, 5vw, 28px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .slider-header label {
+            font-weight: 800;
+            color: var(--text);
+            font-size: clamp(16px, 4.5vw, 18px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            line-height: 1.3;
+        }
+        
+        .slider-header label::before {
+            content: "😴";
+            font-size: clamp(18px, 5vw, 22px);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .slider-value {
+            color: var(--primary);
+            font-weight: 900;
+            font-size: clamp(18px, 5vw, 22px);
+            min-width: 80px;
+            text-align: right;
+            transition: var(--transition);
+        }
+        
+        .slider {
+            width: 100%;
+            height: 12px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(90deg, var(--success), var(--warning), var(--error));
+            border-radius: 6px;
+            outline: none;
+            margin: 24px 0;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: 4px solid var(--primary);
+            box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.4);
+            transition: var(--transition);
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: clamp(12px, 3.5vw, 14px);
+            color: var(--text-muted);
+            margin-top: 12px;
+            font-weight: 600;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        /* 午觉选项 */
+        .nap-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(12px, 3vw, 16px);
+            margin-bottom: clamp(20px, 5vw, 28px);
+        }
+        
+        .nap-option {
+            background: var(--surface);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: var(--radius-md);
+            padding: clamp(16px, 4vw, 24px) 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nap-option.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-color: transparent;
+            transform: translateY(-6px);
+            box-shadow: 0 15px 30px rgba(var(--primary-rgb), 0.25);
+        }
+        
+        .nap-duration {
+            font-size: clamp(22px, 6vw, 28px);
+            font-weight: 900;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+        
+        .nap-desc {
+            font-size: clamp(12px, 3.5vw, 14px);
+            color: var(--text-muted);
+            position: relative;
+            z-index: 2;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        .nap-option.active .nap-duration,
+        .nap-option.active .nap-desc {
+            color: white;
+        }
+        
+        /* 当前时间显示 */
+        .current-time-display {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: clamp(20px, 5vw, 24px);
+            text-align: center;
+            margin-bottom: clamp(20px, 5vw, 28px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .current-time-label {
+            font-size: clamp(14px, 4vw, 16px);
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+        
+        .current-time-value {
+            font-size: clamp(36px, 10vw, 48px);
+            font-weight: 900;
+            color: var(--primary);
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 0 30px rgba(var(--primary-rgb), 0.3);
+            transition: var(--transition);
+            letter-spacing: 2px;
+            font-feature-settings: "tnum";
+            line-height: 1.2;
+        }
+        
+        /* 计算按钮 */
+        .calculate-btn {
+            width: 100%;
+            padding: clamp(20px, 5vw, 26px);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: var(--radius-md);
+            color: white;
+            font-size: clamp(18px, 5vw, 20px);
+            font-weight: 900;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 12px;
+            box-shadow: 0 15px 35px rgba(var(--primary-rgb), 0.3);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(var(--primary-rgb), 0.4);
+        }
+        
+        /* 结果区域 */
+        .results {
+            margin-top: clamp(24px, 6vw, 32px);
+            display: none;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        .results.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(var(--primary-rgb), 0.1);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .result-header h3 {
+            font-size: clamp(20px, 6vw, 24px);
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: var(--transition);
+            line-height: 1.2;
+        }
+        
+        .result-count {
+            background: rgba(var(--primary-rgb), 0.15);
+            color: var(--primary);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: clamp(14px, 4vw, 16px);
+            font-weight: 900;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        
+        .result-list {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(16px, 4vw, 20px);
+        }
+        
+        .result-item {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: clamp(20px, 5vw, 26px);
+            border-left: 8px solid var(--primary);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .result-item.optimal {
+            background: linear-gradient(135deg, rgba(88, 214, 141, 0.2), rgba(88, 214, 141, 0.1));
+            border-left-color: var(--success);
+            transform: scale(1.03);
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.2);
+        }
+        
+        /* 时间显示美化 - 改为24小时制并添加中文时段 */
+        .result-time {
+            font-size: clamp(28px, 8vw, 36px);
+            font-weight: 900;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            font-feature-settings: "tnum";
+            text-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.1);
+            line-height: 1.2;
+        }
+        
+        .time-period {
+            font-size: clamp(14px, 4vw, 16px);
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
+        .result-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .result-cycles {
+            color: var(--text-secondary);
+            font-size: clamp(14px, 4vw, 16px);
+            font-weight: 700;
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            line-height: 1.3;
+        }
+        
+        .set-alarm-btn {
+            background: rgba(var(--primary-rgb), 0.15);
+            color: var(--primary);
+            padding: clamp(10px, 3vw, 12px) clamp(16px, 4vw, 24px);
+            border-radius: var(--radius-sm);
+            font-size: clamp(14px, 3.5vw, 15px);
+            font-weight: 800;
+            text-decoration: none;
+            transition: var(--transition);
+            border: 2px solid rgba(var(--primary-rgb), 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            line-height: 1.2;
+            cursor: pointer;
+            border: none;
+            outline: none;
+        }
+        
+        .set-alarm-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.3);
+        }
+        
+        /* 展开全部按钮 */
+        .expand-btn {
+            width: 100%;
+            padding: clamp(14px, 4vw, 18px);
+            background: var(--surface);
+            border: 2px solid rgba(var(--primary-rgb), 0.3);
+            border-radius: var(--radius-md);
+            color: var(--primary);
+            font-size: clamp(14px, 4vw, 16px);
+            font-weight: 800;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .expand-btn:hover {
+            background: rgba(var(--primary-rgb), 0.1);
+            transform: translateY(-3px);
+        }
+        
+        /* 提示信息 */
+        .tips {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: clamp(20px, 5vw, 28px);
+            margin-top: clamp(24px, 6vw, 32px);
+            border-left: 8px solid var(--warning);
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .tips h3 {
+            color: var(--warning);
+            font-size: clamp(18px, 5vw, 20px);
+            font-weight: 900;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            line-height: 1.3;
+        }
+        
+        .tips ul {
+            padding-left: 28px;
+            color: var(--text-secondary);
+        }
+        
+        .tips li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+        
+        /* 信息卡片 */
+        .info-section {
+            margin-top: clamp(24px, 6vw, 32px);
+        }
+        
+        .info-card {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: clamp(20px, 5vw, 28px);
+            margin-bottom: clamp(16px, 4vw, 24px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .info-card h3 {
+            font-size: clamp(18px, 5vw, 20px);
+            font-weight: 900;
+            margin-bottom: 20px;
+            color: var(--primary);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            line-height: 1.3;
+        }
+        
+        .info-card p {
+            color: var(--text-secondary);
+            font-size: clamp(14px, 4vw, 16px);
+            line-height: 1.7;
+            font-weight: 500;
+        }
+        
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            margin-top: clamp(32px, 8vw, 48px);
+            padding-top: clamp(20px, 5vw, 28px);
+            border-top: 2px solid rgba(var(--primary-rgb), 0.1);
+            color: var(--text-muted);
+            font-size: clamp(14px, 3.5vw, 15px);
+            font-weight: 600;
+        }
+        
+        .footer p:first-child {
+            margin-bottom: 12px;
+        }
+        
+        /* 闹钟设置模态框 */
+        .alarm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .alarm-modal.show {
+            display: flex;
+        }
+        
+        .alarm-modal-content {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: clamp(24px, 6vw, 32px);
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: modalFadeIn 0.3s ease;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .alarm-modal h3 {
+            font-size: clamp(20px, 6vw, 24px);
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .alarm-time {
+            font-size: clamp(32px, 8vw, 40px);
+            font-weight: 900;
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(var(--primary-rgb), 0.1);
+            border-radius: var(--radius-md);
+        }
+        
+        .alarm-options {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .alarm-option {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+        
+        .alarm-option:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.15);
+        }
+        
+        .alarm-option-icon {
+            font-size: 28px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(var(--primary-rgb), 0.1);
+            border-radius: 50%;
+            color: var(--primary);
+        }
+        
+        .alarm-option-text {
+            flex: 1;
+        }
+        
+        .alarm-option-title {
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+        
+        .alarm-option-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(var(--primary-rgb), 0.1);
+            border: none;
+            color: var(--primary);
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        
+        .close-modal:hover {
+            background: var(--primary);
+            color: white;
+            transform: rotate(90deg);
+        }
+        
+        /* 桌面端优化 */
+        @media (min-width: 768px) {
+            body {
+                padding: 24px;
+            }
+            
+            .container {
+                max-width: 480px;
+            }
+            
+            .card {
+                padding: 32px;
+            }
+            
+            .header h1 {
+                font-size: 36px;
+            }
+            
+            .mode-btn {
+                font-size: 16px;
+                min-width: 120px;
+            }
+        }
+        
+        /* 移动端优化 */
+        @media (max-width: 480px) {
+            .nap-options {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 10px;
+            }
+            
+            .mode-btn {
+                min-width: 90px;
+                padding: 14px 8px;
+                font-size: 14px;
+            }
+            
+            .theme-toggle {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .nap-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .result-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            
+            .set-alarm-btn {
+                align-self: flex-start;
+            }
+            
+            .slider-labels {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            
+            .slider-labels span {
+                width: 100%;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景装饰元素 -->
+
+    <div class="container">
+      <header class="header">
+        <h1>科学作息时间表</h1>
+        <p>基于昼夜节律与科学证据，助你高效生活。<br>（参考：皮质醇/褪黑素分泌、R90睡眠周期理论等）</p>
+      </header>
+      <section class="settings" style="margin-bottom:1.5rem;display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;">
+        <label>日期：<input type="date" id="datePicker"></label>
+        <label>季节模式：
+          <select id="seasonMode">
+            <option value="auto">自动识别</option>
+            <option value="spring_summer">春夏（早起30分钟）</option>
+            <option value="autumn_winter">秋冬（标准）</option>
+          </select>
+        </label>
+      </section>
+      <section class="schedule" id="schedule"></section>
+      <section class="r90" style="margin:2rem auto 0 auto;max-width:420px;background:rgba(255,255,255,0.7);border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,0.08);backdrop-filter:blur(16px);padding:1.2rem 1.2rem 1.5rem 1.2rem;text-align:center;">
+        <h2>R90睡眠周期计算器</h2>
+        <div style="margin-bottom:0.7rem; color:#666; font-size:0.98rem;">每个完整睡眠周期约90分钟，建议整周期入睡/起床。</div>
+        <div>
+          <label>入睡时间：<input type="time" id="sleepTime"></label>
+          <button id="calcR90">计算最佳起床时间</button>
+        </div>
+        <div class="r90-result" id="r90Result" style="margin-top:1rem;color:#4f8cff;font-size:1.1rem;font-weight:500;"></div>
+      </section>
+    </div>
+    <script>
+    // 科学作息7大模块定义
+    const baseSchedule = [
+      {
+        name: "晨间觉醒",
+        time: "07:00-08:00",
+        desc: "自然醒来，适度拉伸，享用营养早餐，晒太阳激活生物钟。",
+        science: "皮质醇分泌高峰，促进清醒与代谢。"
+      },
+      {
+        name: "深度工作",
+        time: "08:30-11:30",
+        desc: "专注处理高认知任务，减少干扰，效率最高。",
+        science: "大脑警觉性高，皮质醇维持较高水平。"
+      },
+      {
+        name: "午间修复",
+        time: "12:00-13:30",
+        desc: "午餐+短暂午休（20-30分钟），恢复精力。",
+        science: "褪黑素轻微上升，适合小憩。"
+      },
+      {
+        name: "创意协作",
+        time: "14:00-16:30",
+        desc: "头脑风暴、团队协作、创意性工作。",
+        science: "大脑灵活性增强，社交激素分泌活跃。"
+      },
+      {
+        name: "活力运动",
+        time: "17:00-18:30",
+        desc: "适度有氧或力量训练，舒缓压力。",
+        science: "体温与肌肉力量高峰，运动表现最佳。"
+      },
+      {
+        name: "晚餐放松",
+        time: "19:00-20:30",
+        desc: "与家人共进晚餐，轻松交流，避免重体力活动。",
+        science: "消化系统活跃，褪黑素逐渐分泌。"
+      },
+      {
+        name: "睡眠准备",
+        time: "21:30-23:00",
+        desc: "远离电子屏幕，阅读/冥想，营造安静环境。",
+        science: "褪黑素分泌高峰，促进入睡。"
+      }
+    ];
+    // 季节模式调整
+    function getSeasonMode(date, userPref) {
+      if (userPref && userPref !== 'auto') return userPref;
+      const m = date.getMonth() + 1;
+      if (m >= 3 && m <= 8) return 'spring_summer';
+      return 'autumn_winter';
+    }
+    function adjustScheduleForSeason(schedule, seasonMode) {
+      if (seasonMode === 'spring_summer') {
+        // 早起30分钟，整体提前30分钟
+        return schedule.map(item => {
+          const [start, end] = item.time.split('-').map(t => t.trim());
+          return {
+            ...item,
+            time: shiftTimeRange(start, end, -30)
+          };
+        });
+      }
+      return schedule;
+    }
+    function shiftTimeRange(start, end, deltaMin) {
+      return `${shiftTime(start, deltaMin)}-${shiftTime(end, deltaMin)}`;
+    }
+    function shiftTime(timeStr, deltaMin) {
+      const [h, m] = timeStr.split(':').map(Number);
+      let total = h * 60 + m + deltaMin;
+      if (total < 0) total += 24 * 60;
+      if (total >= 24 * 60) total -= 24 * 60;
+      const hh = String(Math.floor(total / 60)).padStart(2, '0');
+      const mm = String(total % 60).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+    // 渲染作息表
+    function renderSchedule(date, seasonMode) {
+      const schedule = adjustScheduleForSeason(baseSchedule, seasonMode);
+      const container = document.getElementById('schedule');
+      container.innerHTML = '';
+      schedule.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h2>${item.name}</h2>
+          <div class="time">${item.time}</div>
+          <div class="desc">${item.desc}</div>
+          <div class="science">${item.science}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+    // 本地存储
+    function savePrefs(date, seasonMode) {
+      localStorage.setItem('schedule_date', date.toISOString().slice(0,10));
+      localStorage.setItem('season_mode', seasonMode);
+    }
+    function loadPrefs() {
+      const dateStr = localStorage.getItem('schedule_date');
+      const seasonMode = localStorage.getItem('season_mode') || 'auto';
+      return {
+        date: dateStr ? new Date(dateStr) : new Date(),
+        seasonMode
+      };
+    }
+    // 事件绑定
+    const datePicker = document.getElementById('datePicker');
+    const seasonModeSel = document.getElementById('seasonMode');
+    function updateSchedule() {
+      const date = new Date(datePicker.value);
+      const seasonMode = getSeasonMode(date, seasonModeSel.value);
+      renderSchedule(date, seasonMode);
+      savePrefs(date, seasonModeSel.value);
+    }
+    datePicker.addEventListener('change', updateSchedule);
+    seasonModeSel.addEventListener('change', updateSchedule);
+    // 初始化
+    (function init() {
+      const prefs = loadPrefs();
+      datePicker.value = prefs.date.toISOString().slice(0,10);
+      seasonModeSel.value = prefs.seasonMode;
+      updateSchedule();
+    })();
+    // R90睡眠周期计算
+    document.getElementById('calcR90').onclick = function() {
+      const sleepTime = document.getElementById('sleepTime').value;
+      if (!sleepTime) {
+        document.getElementById('r90Result').textContent = '请先选择入睡时间';
+        return;
+      }
+      const [h, m] = sleepTime.split(':').map(Number);
+      const base = h * 60 + m;
+      let results = [];
+      for (let i = 3; i <= 6; i++) { // 3~6个周期
+        const t = base + i * 90;
+        const hh = String(Math.floor((t % 1440) / 60)).padStart(2, '0');
+        const mm = String((t % 60)).padStart(2, '0');
+        results.push(`${hh}:${mm}`);
+      }
+      document.getElementById('r90Result').textContent = '建议起床时间：' + results.join(' 或 ');
+    };
+    </script>
+  </body>
+</html>
